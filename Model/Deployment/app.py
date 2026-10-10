@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# page style
+# small styling tweaks
 st.markdown(
     """
     <style>
@@ -48,7 +48,7 @@ TEST_METRICS = {
 BASE_DIR = Path(__file__).parent
 
 MODEL_PATH = BASE_DIR / "final_model.keras"
-SCALER_PATH = BASE_DIR / "diabetes_age_scaler .pkl"
+SCALER_PATH = BASE_DIR / "diabetes_age_scaler.pkl"
 
 @st.cache_resource
 def load_model_and_scaler():
@@ -347,103 +347,3 @@ with about_tab:
         col.metric(metric_name, f"{metric_value:.2%}")
 
     st.caption("Metrics were calculated on the held-out test set.")
-ult["name"] != "Not provided":
-            st.write(f"**Patient:** {result['name']}")
-        st.caption(f"Generated on {result['generated_at']}")
-
-        if result["prediction"] == 1:
-            st.warning(
-                "The model classified this patient's input as "
-                "**Positive for the diabetes class**."
-            )
-        else:
-            st.success(
-                "The model classified this patient's input as "
-                "**Negative for the diabetes class**."
-            )
-
-        st.write(
-            f"Model output score for the positive class: "
-            f"**{result['probability']:.1%}**"
-        )
-
-        st.caption(
-            "This score is the model's output, not necessarily a calibrated "
-            "estimate of the patient's probability of having diabetes."
-        )
-
-        with st.expander("Inputs used for this result"):
-            used_df = pd.DataFrame(
-                {
-                    "Item": list(result["inputs"].keys()),
-                    "Entered value": list(result["inputs"].values()),
-                }
-            )
-            st.dataframe(used_df, hide_index=True, use_container_width=True)
-
-        st.warning(
-            "This result cannot confirm or rule out diabetes. "
-            "A qualified healthcare professional should assess the patient "
-            "and arrange appropriate testing."
-        )
-
-        report_text = build_report(
-            result["name"],
-            result["generated_at"],
-            result["inputs"],
-            result["prediction"],
-            result["probability"],
-        )
-
-        safe_name = "".join(
-            c for c in result["name"] if c.isalnum() or c in (" ", "_", "-")
-        ).strip().replace(" ", "_")
-        file_name = (
-            f"screening_result_{safe_name}.txt"
-            if safe_name and result["name"] != "Not provided"
-            else "screening_result.txt"
-        )
-
-        st.download_button(
-            label="Download Results and Input Summary",
-            data=report_text,
-            file_name=file_name,
-            mime="text/plain"
-        )
-
-# About the Model tab
-with about_tab:
-    st.header("About the Model")
-
-    st.write(
-        "This application uses a neural network built with TensorFlow and "
-        "Keras to classify whether a patient's input pattern resembles the "
-        "diabetes class. The model uses ten features: age, gender, and eight "
-        "yes or no symptom and condition items (polyuria, polydipsia, sudden "
-        "weight loss, weakness, polyphagia, genital thrush, blurred vision, "
-        "and obesity). Age is scaled with the scaler fitted during "
-        "preprocessing. A model output score of 50% or higher is classified "
-        "as positive."
-    )
-
-    st.subheader("Test Performance")
-
-    metric_items = list(TEST_METRICS.items())
-    for start in range(0, len(metric_items), 3):
-        row = metric_items[start:start + 3]
-        cols = st.columns(3)
-        for col, (metric_name, metric_value) in zip(cols, row):
-            col.metric(metric_name, format_metric(metric_value))
-
-    if TEST_SET_SIZE is not None:
-        st.caption(f"Metrics were calculated on a test set of {TEST_SET_SIZE} records.")
-    else:
-        st.caption("Metrics were calculated on the held-out test set.")
-
-    st.subheader("Limitations")
-    st.write(
-        "The model was trained on a limited set of records and only on the "
-        "features listed above. Patient names are not used by the model. "
-        "The output is a screening aid and must be followed by clinical "
-        "assessment and laboratory testing."
-    )
