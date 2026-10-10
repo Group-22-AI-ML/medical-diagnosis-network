@@ -65,7 +65,7 @@ TEST_SET_SIZE = None
 BASE_DIR = Path(__file__).parent
 
 MODEL_PATH = BASE_DIR / "final_model.keras"
-SCALER_PATH = BASE_DIR / "diabetes_age_scaler.pkl"
+SCALER_PATH = BASE_DIR / "diabetes_age_scaler .pkl"
 
 @st.cache_resource
 def load_model_and_scaler():
