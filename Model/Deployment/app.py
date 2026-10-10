@@ -6,18 +6,12 @@ import joblib
 from pathlib import Path
 from datetime import datetime
 
-# -------------------------
-# Page configuration
-# -------------------------
 st.set_page_config(
     page_title="Medical Diagnostic Network",
-    page_icon="🩺",
     layout="centered"
 )
 
-# -------------------------
-# Interface styling
-# -------------------------
+# page style
 st.markdown(
     """
     <style>
@@ -42,30 +36,19 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# -------------------------
-# Test metrics (fill in your actual test results)
-# -------------------------
-# Replace each None with the value from your test set evaluation.
-# Enter values as decimals between 0 and 1, for example 0.95 for 95%.
-# Metrics left as None are shown as "Not set" in the app.
+# test set results from the notebook
 TEST_METRICS = {
-    "Accuracy": None,
-    "Precision": None,
-    "Recall": None,
-    "F1-score": None,
-    "ROC-AUC": None,
+    "Accuracy": 0.8974,
+    "Precision": 0.8600,
+    "Recall": 0.9773,
+    "F1-score": 0.9149,
 }
 
-# Number of records in your test set, for example 104. Leave as None if unknown.
-TEST_SET_SIZE = None
-
-# -------------------------
-# Load trained model and scaler
-# -------------------------
+# load the trained model and the age scaler
 BASE_DIR = Path(__file__).parent
 
 MODEL_PATH = BASE_DIR / "final_model.keras"
-SCALER_PATH = BASE_DIR / "diabetes_age_scaler .pkl"
+SCALER_PATH = BASE_DIR / "diabetes_age_scaler.pkl"
 
 @st.cache_resource
 def load_model_and_scaler():
@@ -82,64 +65,37 @@ except Exception as e:
     )
     st.stop()
 
-# -------------------------
-# Helper functions
-# -------------------------
 def yes_no_to_number(value):
     return 1 if value == "Yes" else 0
 
 def gender_to_number(value):
     return 1 if value == "Male" else 0
 
-def format_metric(value):
-    if value is None:
-        return "Not set"
-    return f"{value:.1%}"
+def build_report(patient_name, generated_at, inputs, prediction):
+    label = (
+        "Positive for the diabetes class"
+        if prediction == 1
+        else "Negative for the diabetes class"
+    )
 
-def build_report(patient_name, generated_at, inputs, prediction, probability):
-    label = "Positive for the diabetes class" if prediction == 1 else "Negative for the diabetes class"
-
-    lines = []
-    lines.append("MEDICAL DIAGNOSTIC NETWORK")
-    lines.append("AI-Based Diabetes Screening Report")
-    lines.append("=" * 50)
-    lines.append(f"Patient name: {patient_name}")
-    lines.append(f"Date generated: {generated_at}")
-    lines.append("")
-    lines.append("PATIENT INFORMATION SUMMARY")
-    lines.append("-" * 50)
+    lines = [
+        "Medical Diagnostic Network",
+        "Diabetes Screening Report",
+        "",
+        f"Patient name: {patient_name}",
+        f"Date: {generated_at}",
+        "",
+        "Patient Information",
+    ]
     for key, value in inputs.items():
-        lines.append(f"{key}: {value}")
+        if key != "Patient name":
+            lines.append(f"{key}: {value}")
     lines.append("")
-    lines.append("SCREENING RESULT")
-    lines.append("-" * 50)
+    lines.append("Screening Result")
     lines.append(f"Classification: {label}")
-    lines.append(f"Model output score for the positive class: {probability:.1%}")
-    lines.append("")
-    lines.append("MODEL TEST METRICS")
-    lines.append("-" * 50)
-    for key, value in TEST_METRICS.items():
-        lines.append(f"{key}: {format_metric(value)}")
-    if TEST_SET_SIZE is not None:
-        lines.append(f"Test set size: {TEST_SET_SIZE}")
-    lines.append("")
-    lines.append("NOTE")
-    lines.append("-" * 50)
-    lines.append(
-        "This score is the model's output, not necessarily a calibrated "
-        "estimate of the patient's probability of having diabetes."
-    )
-    lines.append(
-        "This result cannot confirm or rule out diabetes. A qualified "
-        "healthcare professional should assess the patient and arrange "
-        "appropriate testing."
-    )
     return "\n".join(lines)
 
-# -------------------------
-# Application interface
-# -------------------------
-st.title("🩺 Medical Diagnostic Network")
+st.title("Medical Diagnostic Network")
 st.subheader("AI-Based Diabetes Screening Support")
 
 st.write(
@@ -156,20 +112,14 @@ st.info(
 
 screening_tab, about_tab = st.tabs(["Screening", "About the Model"])
 
-# =========================
-# Screening tab
-# =========================
 with screening_tab:
 
-    # -------------------------
-    # Patient information
-    # -------------------------
     st.header("Patient Information")
 
     patient_name = st.text_input(
         "Patient name (optional)",
         placeholder="Enter the patient's full name",
-        help="The name is only used on the screen and in the downloadable "
+        help="The name only appears on the screen and in the downloaded "
              "report. It is not given to the model."
     )
 
@@ -245,9 +195,7 @@ with screening_tab:
             horizontal=True
         )
 
-    # -------------------------
-    # Patient information summary
-    # -------------------------
+    # summary of what has been entered so far
     display_name = patient_name.strip() if patient_name.strip() else "Not provided"
 
     inputs_summary = {
@@ -273,19 +221,16 @@ with screening_tab:
             "Entered value": list(inputs_summary.values()),
         }
     )
-    st.dataframe(summary_df, hide_index=True, use_container_width=True)
+    st.dataframe(summary_df, hide_index=True, width="stretch")
 
-    # -------------------------
-    # Prepare model input
-    # -------------------------
     if st.button("Generate Screening Result", type="primary"):
 
-        # Scale age using the fitted scaler from preprocessing.
+        # scale age with the scaler fitted during preprocessing
         scaled_age = age_scaler.transform(
             pd.DataFrame({"age": [age]})
         )[0][0]
 
-        # Preserve the exact training feature order.
+        # feature order has to match the training data
         input_data = pd.DataFrame(
             [[
                 scaled_age,
@@ -313,26 +258,21 @@ with screening_tab:
             ]
         )
 
-        # Generate prediction
         probability = float(
             model.predict(input_data, verbose=0)[0][0]
         )
 
         prediction = 1 if probability >= 0.5 else 0
 
-        # Keep the result and the inputs it was based on, so the result
-        # stays on screen after the download button is clicked.
+        # keep the result in session state so it stays on screen
+        # after the download button is pressed
         st.session_state["result"] = {
             "name": display_name,
             "generated_at": datetime.now().strftime("%d %B %Y, %H:%M"),
             "inputs": dict(inputs_summary),
             "prediction": prediction,
-            "probability": probability,
         }
 
-    # -------------------------
-    # Display result
-    # -------------------------
     if "result" in st.session_state:
         result = st.session_state["result"]
 
@@ -340,6 +280,74 @@ with screening_tab:
         st.header("Screening Result")
 
         if result["name"] != "Not provided":
+            st.write(f"**Patient:** {result['name']}")
+        st.caption(f"Generated on {result['generated_at']}")
+
+        if result["prediction"] == 1:
+            st.warning(
+                "The model classified this patient's input as "
+                "**Positive for the diabetes class**."
+            )
+        else:
+            st.success(
+                "The model classified this patient's input as "
+                "**Negative for the diabetes class**."
+            )
+
+        with st.expander("Inputs used for this result"):
+            used_df = pd.DataFrame(
+                {
+                    "Item": list(result["inputs"].keys()),
+                    "Entered value": list(result["inputs"].values()),
+                }
+            )
+            st.dataframe(used_df, hide_index=True, width="stretch")
+
+        report_text = build_report(
+            result["name"],
+            result["generated_at"],
+            result["inputs"],
+            result["prediction"],
+        )
+
+        safe_name = "".join(
+            c for c in result["name"] if c.isalnum() or c in (" ", "_", "-")
+        ).strip().replace(" ", "_")
+        file_name = (
+            f"screening_result_{safe_name}.txt"
+            if safe_name and result["name"] != "Not provided"
+            else "screening_result.txt"
+        )
+
+        st.download_button(
+            label="Download Results and Input Summary",
+            data=report_text,
+            file_name=file_name,
+            mime="text/plain"
+        )
+
+with about_tab:
+    st.header("About the Model")
+
+    st.write(
+        "This application uses a neural network built with TensorFlow and "
+        "Keras to classify whether a patient's input pattern resembles the "
+        "diabetes class. The model uses ten features: age, gender, and eight "
+        "yes or no symptom and condition items (polyuria, polydipsia, sudden "
+        "weight loss, weakness, polyphagia, genital thrush, blurred vision "
+        "and obesity). Age is scaled with the scaler fitted during "
+        "preprocessing, and an output of 50% or higher is classified as "
+        "positive. Patient names are not used by the model."
+    )
+
+    st.subheader("Test Performance")
+
+    cols = st.columns(len(TEST_METRICS))
+    for col, (metric_name, metric_value) in zip(cols, TEST_METRICS.items()):
+        col.metric(metric_name, f"{metric_value:.2%}")
+
+    st.caption("Metrics were calculated on the held-out test set.")
+ult["name"] != "Not provided":
             st.write(f"**Patient:** {result['name']}")
         st.caption(f"Generated on {result['generated_at']}")
 
@@ -403,9 +411,7 @@ with screening_tab:
             mime="text/plain"
         )
 
-# =========================
 # About the Model tab
-# =========================
 with about_tab:
     st.header("About the Model")
 
