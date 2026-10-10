@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# small styling tweaks
+# page style
 st.markdown(
     """
     <style>
