@@ -11,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# page style
+# small styling tweaks
 st.markdown(
     """
     <style>
@@ -38,10 +38,10 @@ st.markdown(
 
 # test set results from the notebook
 TEST_METRICS = {
-    "Accuracy": 0.8974,
-    "Precision": 0.8600,
-    "Recall": 0.9773,
-    "F1-score": 0.9149,
+    "Accuracy": 0.9231,
+    "Precision": 0.9318,
+    "Recall": 0.9318,
+    "F1-score": 0.9318,
 }
 
 # load the trained model and the age scaler
@@ -67,9 +67,6 @@ except Exception as e:
 
 def yes_no_to_number(value):
     return 1 if value == "Yes" else 0
-
-def gender_to_number(value):
-    return 1 if value == "Male" else 0
 
 def build_report(patient_name, generated_at, inputs, prediction):
     label = (
@@ -123,22 +120,13 @@ with screening_tab:
              "report. It is not given to the model."
     )
 
-    col_age, col_gender = st.columns(2)
-
-    with col_age:
-        age = st.number_input(
-            "Age",
-            min_value=1,
-            max_value=120,
-            value=30,
-            step=1
-        )
-
-    with col_gender:
-        gender = st.selectbox(
-            "Gender",
-            ["Female", "Male"]
-        )
+    age = st.number_input(
+        "Age",
+        min_value=1,
+        max_value=120,
+        value=30,
+        step=1
+    )
 
     st.header("Symptoms and Other Features")
     st.write("Select Yes or No for each item.")
@@ -201,7 +189,6 @@ with screening_tab:
     inputs_summary = {
         "Patient name": display_name,
         "Age": f"{age} years",
-        "Gender": gender,
         "Frequent urination (polyuria)": polyuria,
         "Excessive thirst (polydipsia)": polydipsia,
         "Sudden weight loss": sudden_weight_loss,
@@ -234,7 +221,6 @@ with screening_tab:
         input_data = pd.DataFrame(
             [[
                 scaled_age,
-                gender_to_number(gender),
                 yes_no_to_number(polyuria),
                 yes_no_to_number(polydipsia),
                 yes_no_to_number(sudden_weight_loss),
@@ -246,7 +232,6 @@ with screening_tab:
             ]],
             columns=[
                 "age",
-                "gender",
                 "polyuria",
                 "polydipsia",
                 "sudden_weight_loss",
@@ -332,10 +317,11 @@ with about_tab:
     st.write(
         "This application uses a neural network built with TensorFlow and "
         "Keras to classify whether a patient's input pattern resembles the "
-        "diabetes class. The model uses ten features: age, gender, and eight "
+        "diabetes class. The model uses nine features: age and eight "
         "yes or no symptom and condition items (polyuria, polydipsia, sudden "
         "weight loss, weakness, polyphagia, genital thrush, blurred vision "
-        "and obesity). Age is scaled with the scaler fitted during "
+        "and obesity). Gender is not used, so it cannot influence the "
+        "result. Age is scaled with the scaler fitted during "
         "preprocessing, and an output of 50% or higher is classified as "
         "positive. Patient names are not used by the model."
     )
