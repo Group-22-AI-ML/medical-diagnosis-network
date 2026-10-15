@@ -15,10 +15,6 @@ The project demonstrates the development of a machine learning
 solution from data preprocessing and model training to evaluation
 and deployment.
 
-**Important:** This is an academic prototype for screening support.
-It does not provide a confirmed medical diagnosis and must not replace
-professional medical assessment or laboratory testing.
-
 ## 2. Project Objectives
 
 - Preprocess the Early Stage Diabetes Risk Prediction dataset.
